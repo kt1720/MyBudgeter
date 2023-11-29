@@ -1,23 +1,24 @@
-from records import budget, users
+from records.budget import Budget
+from records.transactions import Transactions
 class calculator():
-    def __init__(self, spending, budget, categories):
+    def __init__(self, spending, budget, categories) -> None:
         self.spending = spending,
         self.budget = budget
         self.categories = categories
     
-    def total_spending(self):
+    def total_spending(self) -> float: 
         """Calculate the total spending of the user under all categories"""
         for category in self.category:
             total_spending += self.spending[category]
             return total_spending
     
-    def total_budget(self):
+    def total_budget(self) -> float:
         """Calculate the total budget of the user under all categories"""
         for category in self.category:
             total_budget += self.budget[category]
             return total_budget
     
-    def difference(self, categorize = False):
+    def difference(self, categorize = False) -> float:
         """
         Calculate if the user is over or under budget in the given month and calculate the difference,
         user can choose whether to calculate the total or categorical difference
