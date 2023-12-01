@@ -26,7 +26,7 @@ class calculator():
         self.__budget_cnx.close()
         self.__transactions_cnx.close()
 
-    def total(self, type=TRANSACTION_TYPE, categories=None, month=None, year=None) -> float:
+    def total(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
         """Calculate the total spending or budget."""
         try:
             # Build the base query
@@ -42,13 +42,20 @@ class calculator():
                 placeholders = ', '.join('?' for _ in categories)
                 conditions.append(f"category IN ({placeholders})")
                 values.extend(categories)
+            
+            if months:
+                if isinstance(months, int):
+                    months = [months]  # Convert single month to list
+                month_placeholders = ', '.join('?' for _ in months)
+                conditions.append(f"strftime('%m', trans_date) IN ({month_placeholders})")
+                values.extend(str(month).zfill(2) for month in months)
 
-            if month and year:
-                if type == self.TRANSACTION_TYPE:
-                    conditions.append("strftime('%m', trans_date) = ? AND strftime('%Y', trans_date) = ?")
-                elif type == self.BUDGET_TYPE:
-                    conditions.append("month = ? AND year = ?")
-                values.extend([str(month).zfill(2), str(year)])
+            if years:
+                if isinstance(years, int):
+                    years = [years]  # Convert single month to list
+                year_placeholders = ', '.join('?' for _ in years)
+                conditions.append(f"strftime('%Y', trans_date) IN ({year_placeholders})")
+                values.extend(str(year).zfill(2) for year in years)
 
             # Add WHERE clause if conditions are present
             where_clause = " AND ".join(conditions)
@@ -78,9 +85,13 @@ class calculator():
             if remaining_budget < 0:
                 print(f"Warning: You are over budget by ${abs(remaining_budget)}.")
             return remaining_budget
+        else:
+            print("Error calculating remining budget.")
+            return None
+        
 
-    def average(self, type=TRANSACTION_TYPE, categories=None, month=None, year=None) -> float:
-        """Calculate the total spending or budget."""
+    def average(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
+        """Calculate the average spending or budget."""
         try:
             # Build the base query
             base_query = f"SELECT AVG(amount) FROM {type}"
@@ -96,12 +107,19 @@ class calculator():
                 conditions.append(f"category IN ({placeholders})")
                 values.extend(categories)
 
-            if month and year:
-                if type == self.TRANSACTION_TYPE:
-                    conditions.append("strftime('%m', trans_date) = ? AND strftime('%Y', trans_date) = ?")
-                elif type == self.BUDGET_TYPE:
-                    conditions.append("month = ? AND year = ?")
-                values.extend([str(month).zfill(2), str(year)])
+            if months:
+                if isinstance(months, int):
+                    months = [months]  # Convert single month to list
+                month_placeholders = ', '.join('?' for _ in months)
+                conditions.append(f"strftime('%m', trans_date) IN ({month_placeholders})")
+                values.extend(str(month).zfill(2) for month in months)
+
+            if years:
+                if isinstance(years, int):
+                    years = [years]  # Convert single month to list
+                year_placeholders = ', '.join('?' for _ in years)
+                conditions.append(f"strftime('%Y', trans_date) IN ({year_placeholders})")
+                values.extend(str(year).zfill(2) for year in years)
 
             # Add WHERE clause if conditions are present
             where_clause = " AND ".join(conditions)
@@ -110,9 +128,52 @@ class calculator():
             # Execute the query
             getattr(self, f"{type}_cur").execute(full_query, values)
 
-            total = getattr(self, f"{type}_cur").fetchone()[0]
-            return total
+            average = getattr(self, f"{type}_cur").fetchone()[0]
+            return average
 
         except sqlite3.Error as e:
             print("Error calculating total:", e)
+            return None
+        
+def highest_spending(self, category=True, year=False):
+        """
+        Find the highest spending based on the provided input.
+        - If category is given, find the highest spending in that category.
+        - If year is given, find the highest spending month in that year.
+        - If neither category nor year is given, find the highest spending year.
+        """
+        try:
+            # Build the base query
+            base_query = f"SELECT"
+
+            # Prepare conditions and values for WHERE clause
+            conditions = []
+            values = []
+
+            if category:
+                base_query += f" category, SUM(amount) FROM transactions GROUP BY category"
+            elif year:
+                base_query += f" strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month"
+                conditions.append("strftime('%Y', trans_date) = ?")
+                values.append(str(year))
+            else:
+                base_query += f" strftime('%Y', trans_date) as year, SUM(amount) FROM transactions GROUP BY year"
+
+            # Add WHERE clause if conditions are present
+            where_clause = " AND ".join(conditions) if conditions else ""
+            full_query = f"{base_query} {where_clause} ORDER BY SUM(amount) DESC LIMIT 1"
+
+            # Execute the query
+            self._spending_cur.execute(full_query, values)
+
+            result = self._spending_cur.fetchone()
+            if result:
+                highest_spending_value = result[0]
+                highest_amount = result[1]
+                return f"Highest Spending: {highest_spending_value}, Amount: ${highest_amount:.2f}"
+            else:
+                return "No data found."
+
+        except sqlite3.Error as e:
+            print("Error finding highest spending:", e)
             return None
