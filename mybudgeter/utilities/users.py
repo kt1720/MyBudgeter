@@ -1,5 +1,4 @@
 import os
-
 from budget import Budget
 from transactions import Transactions
 
