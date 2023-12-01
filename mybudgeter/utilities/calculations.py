@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 class calculator():
     TRANSACTION_TYPE = "transactions"
@@ -135,44 +136,59 @@ class calculator():
             print("Error calculating total:", e)
             return None
         
-def highest_spending(self, category=True, year=False):
+    def highest_spending(self, calculate_category=True):
         """
         Find the highest spending based on the provided input.
-        - If category is given, find the highest spending in that category.
-        - If year is given, find the highest spending month in that year.
-        - If neither category nor year is given, find the highest spending year.
+        - If calculate_category is True, find the highest spending category in general.
+        - If calculate_category is False, find the highest spending month in the current year.
         """
         try:
-            # Build the base query
-            base_query = f"SELECT"
-
-            # Prepare conditions and values for WHERE clause
-            conditions = []
-            values = []
-
-            if category:
-                base_query += f" category, SUM(amount) FROM transactions GROUP BY category"
-            elif year:
-                base_query += f" strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month"
-                conditions.append("strftime('%Y', trans_date) = ?")
-                values.append(str(year))
+            if calculate_category:
+                self.transactions_cur.execute("SELECT category, SUM(amount) FROM transactions GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1")
+                result = self.transactions_cur.fetchone()
+                if result:
+                    highest_spending_category, highest_amount = result
+                    return f"Highest spending category: {highest_spending_category}, Amount: ${highest_amount:.2f}"
+                else:
+                    return "No data found for highest spending category."
             else:
-                base_query += f" strftime('%Y', trans_date) as year, SUM(amount) FROM transactions GROUP BY year"
+                current_year = datetime.now().year
+                self.transactions_cur.execute("SELECT strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month ORDER BY SUM(amount) DESC LIMIT 1", (str(current_year),))
+                result = self.transactions_cur.fetchone()
+                if result:
+                    highest_spending_month, highest_amount = result
+                    return f"Highest spending month in current year: {highest_spending_month}, Amount: ${highest_amount:.2f}"
+                else:
+                    return "No data found for highest spending month in the current year."
 
-            # Add WHERE clause if conditions are present
-            where_clause = " AND ".join(conditions) if conditions else ""
-            full_query = f"{base_query} {where_clause} ORDER BY SUM(amount) DESC LIMIT 1"
+        except sqlite3.Error as e:
+            print("Error finding highest spending:", e)
+            return None
 
-            # Execute the query
-            self._spending_cur.execute(full_query, values)
-
-            result = self._spending_cur.fetchone()
-            if result:
-                highest_spending_value = result[0]
-                highest_amount = result[1]
-                return f"Highest Spending: {highest_spending_value}, Amount: ${highest_amount:.2f}"
+    def lowest_spending(self, calculate_category=True):
+        """
+        Find the lowest spending based on the provided input.
+        - If calculate_category is True, find the lowest spending category in general.
+        - If calculate_category is False, find the lowest spending month in the current year.
+        """
+        try:
+            if calculate_category:
+                self.transactions_cur.execute("SELECT category, SUM(amount) FROM transactions GROUP BY category ORDER BY SUM(amount) LIMIT 1")
+                result = self.transactions_cur.fetchone()
+                if result:
+                    lowest_spending_category, lowest_amount = result
+                    return f"Lowest spending category: {lowest_spending_category}, Amount: ${lowest_amount:.2f}"
+                else:
+                    return "No data found for highest spending category."
             else:
-                return "No data found."
+                current_year = datetime.now().year
+                self.transactions_cur.execute("SELECT strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month ORDER BY SUM(amount) LIMIT 1", (str(current_year),))
+                result = self.transactions_cur.fetchone()
+                if result:
+                    lowest_spending_month, lowest_amount = result
+                    return f"Lowest spending month in current year: {lowest_spending_month}, Amount: ${lowest_amount:.2f}"
+                else:
+                    return "No data found for highest spending month in the current year."
 
         except sqlite3.Error as e:
             print("Error finding highest spending:", e)
