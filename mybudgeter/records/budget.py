@@ -2,6 +2,15 @@ import os
 import datetime
 import sqlite3
 
+def sql_query(cursor, query, args=None):
+    try:
+        if args:
+            cursor.execute(query, args)
+        else:
+            cursor.execute(query)
+    except sqlite3.Error as err: 
+            print(err)
+
 class Budget(object):
     def __init__(self, file_path, db=None) -> None:
         if db:
@@ -68,14 +77,30 @@ class Budget(object):
         for i in range(len(cat_list)):
             self.add_category(cat_list[i], limit_list[i], date_list[i])
     
-    def modify_category():
-        # change some part of the budget
-        pass
+    def modify_category(self, category, value, month, year):
 
-    def delete_category():
-        pass
+        query = f"update budget set amount = ? WHERE category = ? AND month = ? and year = ?"
+        args = (value, category, month, year)
+        sql_query(self.__cur, query, args)
+        self.__cnx.commit()
 
+    def delete_category(self, category, month, year):
+        query = f"delete from budget WHERE category = ? AND month = ? AND year = ?"
+        args = (category, month, year)
+        sql_query(self.__cur, query, args)
+        self.__cnx.commit()
 
-    def check_budget():
-        # print info about budget
-        pass
+    def check_budget(self, month=None, year=None):
+        month = month if month else datetime.datetime.now().month
+        year = year if year else datetime.datetime.now().year
+
+        query = f"Select * from budget WHERE month = ? AND year = ?"
+        args = (month, year)
+        sql_query(self.__cur, query, args)
+        return [tup for tup in self.__cur]
+    
+    def get_categories(self):
+
+        query = """SELECT DISTINCT category from budget"""
+        sql_query(self.__cur, query)
+        return [cat[0] for cat in self.__cur]

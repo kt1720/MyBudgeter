@@ -2,6 +2,15 @@ import os
 import datetime
 import sqlite3
 
+def sql_query(cursor, query, args=None):
+    try:
+        if args:
+            cursor.execute(query, args)
+        else:
+            cursor.execute(query)
+    except sqlite3.Error as err: 
+            print(err)
+        
 class Transactions(object):
     def __init__(self, file_path, db=None) -> None:
         if db:
@@ -54,14 +63,29 @@ class Transactions(object):
         except sqlite3.Error as err: 
             print(err)
 
-    def modify_transaction():
-        # change some part of the budget
-        pass
+    def modify_transaction(self, id, field, value):
+        # change some part of the transaction
+        query = f"update transactions set {field} = ? WHERE id = ?"
+        args = (value, id)
+        sql_query(self.__cur, query, args)
+        self.__cnx.commit()
 
-    def delete_transaction():
-        pass
+    def delete_transaction(self, id):
+        query = """delete from transactions WHERE id = ?"""
+        args = (id,)
+        sql_query(self.__cur, query, args)
+        self.__cnx.commit()
 
+    def get_categories(self):
 
-    def check_transactions():
-        # print info about budget
-        pass
+        query = """SELECT DISTINCT category from transactions"""
+        sql_query(self.__cur, query)
+        return [cat[0] for cat in self.__cur]
+    
+    def get_n_transactions(self, n, sort_field='trans_date', asc=False):
+        if asc:
+             query = f'SELECT * from transactions order by {sort_field} limit {n}'
+        else:
+            query = f'SELECT * from transactions order by {sort_field} DESC limit {n}'
+        sql_query(self.__cur, query)
+        return [cat for cat in self.__cur]
