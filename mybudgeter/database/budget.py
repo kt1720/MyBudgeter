@@ -2,61 +2,37 @@ import os
 import datetime
 import sqlite3
 
-def sql_query(cursor, query, args=None):
-    try:
-        if args:
-            cursor.execute(query, args)
-        else:
-            cursor.execute(query)
-    except sqlite3.Error as err: 
-            print(err)
+from database.database import Database
 
-class Budget(object):
+class Budget(Database):
     def __init__(self, file_path, db=None) -> None:
-        if db:
-            self.__connect(db)
-        else:
-            self.create_db(file_path)
-        
+        super().__init__(file_path, db)
 
-    def __connect(self, db):
-        self.__cnx = sqlite3.connect(db)
-        self.__cur = self.__cnx.cursor()
-
-    def __close(self):
-        self.__cnx.close()
-
-    def __del__(self):
-        self.__close()
-
-    def create_db(self, file_path):
+    def __create_db(self, file_path):
         db = os.path.join(file_path, "budgeting.db")
-        try:
-            self.__connect(db)
-            self.__cur.execute("""CREATE TABLE budget (
+        query = """CREATE TABLE budget (
                             category text,
                             month int,
                             year int,
                             amount decimal(7,2),
                             PRIMARY KEY (category,month,year),
                             CHECK (month >= 1 AND month <= 12 AND year > 0)
-                            );""")
-            self.__cnx.commit()
+                            );"""
+        try:
+            self.query(query)
+            self.cnx.commit()
         except sqlite3.Error as err: 
             print(err)
-            self.__close()
+            self.close()
 
     def add_category(self, category, limit=0, date=None):
         date = datetime.datetime.now() if date is None else date
-        tup = (category.lower(), date.month, date.year, limit)
-        try:
-            self.__cur.execute(
-                """INSERT INTO budget 
+        args = (category.lower(), date.month, date.year, limit)
+        query = """INSERT INTO budget 
                 (category, month, year, amount) 
-                VALUES (?, ?, ?, ?)""", tup)
-            self.__cnx.commit()
-        except sqlite3.Error as err: 
-            print(err)
+                VALUES (?, ?, ?, ?)"""
+        self.query(query, args)
+        self.cnx.commit()
 
     def add_from_lists(self, cat_list, limit_list=None, date_list=None):
         
@@ -81,14 +57,14 @@ class Budget(object):
 
         query = f"update budget set amount = ? WHERE category = ? AND month = ? and year = ?"
         args = (value, category, month, year)
-        sql_query(self.__cur, query, args)
-        self.__cnx.commit()
+        self.query(query, args)
+        self.cnx.commit()
 
     def delete_category(self, category, month, year):
         query = f"delete from budget WHERE category = ? AND month = ? AND year = ?"
         args = (category, month, year)
-        sql_query(self.__cur, query, args)
-        self.__cnx.commit()
+        self.query(query, args)
+        self.cnx.commit()
 
     def check_budget(self, month=None, year=None):
         month = month if month else datetime.datetime.now().month
@@ -96,11 +72,11 @@ class Budget(object):
 
         query = f"Select * from budget WHERE month = ? AND year = ?"
         args = (month, year)
-        sql_query(self.__cur, query, args)
-        return [tup for tup in self.__cur]
+        self.query(query, args)
+        return [tup for tup in self.cur]
     
     def get_categories(self):
 
         query = """SELECT DISTINCT category from budget"""
-        sql_query(self.__cur, query)
-        return [cat[0] for cat in self.__cur]
+        self.query(query)
+        return [cat[0] for cat in self.cur]
