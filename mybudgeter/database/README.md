@@ -14,11 +14,11 @@ The `Database` class has the following methods:
 
 `close()` - closes the connection to the db.
 
-`\_\_del\_\_()` - closes the connection when the class is deleted.
+`__del__()` - closes the connection when the class is deleted.
 
 `query(query, args)` - used to query the SQLite db with a SQL query and optional arguments to the query.
 
-`\_\_create_db(filepath)` - empty method that will be implemented by child classes. Meant to create a new database at the given `file_path`.
+`__create_db(filepath)` - empty method that will be implemented by child classes. Meant to create a new database at the given `file_path`.
 
 `get_categories()` - empty method that will be implemented by child classes. Meant to return all distinct categories in the database. 
 
