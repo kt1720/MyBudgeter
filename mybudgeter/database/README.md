@@ -4,7 +4,7 @@ This package contains the necessary classes to interact with our transactions an
 
 ### database module
 
-The database model contains our base class `Database` which is inherited by the `Transactions` and `Budget` classes.
+The database module contains our base class `Database` which is inherited by the `Transactions` and `Budget` classes.
 
 The `Database` class is initialized with optional `file_path` and `db` arguments. `db` should be a path to a database file. If this is provided, the class will make a connection to the database. If it is not provided a new database is created either in the `file_path` provided or by default in the current working directory.
 
