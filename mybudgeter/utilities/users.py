@@ -148,8 +148,9 @@ class User(object):
 
         # Create a pie chart
         plt.figure(figsize=(8, 8))
-        plt.pie(amounts, labels=categories, autopct='%1.1f%%', startangle=140)
+        plt.pie(amounts, labels=None, autopct='%1.1f%%', startangle=140)
         plt.title(f"{type.capitalize()} breakdown by categories")
+        plt.legend(categories, title="Categories", loc="center left", bbox_to_anchor=(1, 0.5))
         plt.axis('equal')
         plt.show()
 

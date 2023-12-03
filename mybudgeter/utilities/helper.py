@@ -66,7 +66,6 @@ def linechart_query(type):
     # Format the dates for the SQLite query
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
-
     if type == "transactions":
         query = f"""
             SELECT strftime('%Y-%m', trans_date) AS month, SUM(amount)
@@ -77,9 +76,9 @@ def linechart_query(type):
             """
     else:
         query = f"""
-            SELECT year || '-' || month AS month, SUM(amount)
+            SELECT printf('%d-%02d', year, month) AS month, SUM(amount)
             FROM {type}
-            WHERE year || '-' || month BETWEEN '{start_date_str}' AND '{end_date_str}'
+            WHERE printf('%d-%02d', year, month) BETWEEN '{start_date_str}' AND '{end_date_str}'
             GROUP BY year, month
             ORDER BY month
             """
