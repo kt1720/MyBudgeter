@@ -5,7 +5,7 @@ import sqlite3
 from database.database import Database
         
 class Transactions(Database):
-    def __init__(self, file_path, db=None) -> None:
+    def __init__(self, file_path=None, db=None) -> None:
         super().__init__(file_path, db)
 
     def __create_db(self, file_path):
@@ -23,7 +23,11 @@ class Transactions(Database):
             print(err) 
             self.close()
 
-    def add_transaction(self, category, amount, date=None, name=None):
+    def add_transaction(self, category:str, amount:float, date=None, name=None):
+        """Adds an individual transaction to the transactions table and returns the transaction id when successful.
+        Date can be a datetime object or None which defaults to the current date. 
+        Name is an optional string parameter to store info about the transaction more info."""
+        
         if isinstance(date, datetime.datetime):
             # convert to string for sql
             date = date.strftime("%Y-%m-%d")
@@ -40,26 +44,30 @@ class Transactions(Database):
         self.cnx.commit()
         return res
 
-    def modify_transaction(self, id, field, value):
+    def modify_transaction(self, id:int, field:str, value):
+        """Modifies the value of the given field for the transaction in the table with id."""
         # change some part of the transaction
         query = f"update transactions set {field} = ? WHERE id = ?"
         args = (value, id)
         self.query(query, args)
         self.cnx.commit()
 
-    def delete_transaction(self, id):
+    def delete_transaction(self, id:int):
+        "Deletes a transaction from the table."
         query = """delete from transactions WHERE id = ?"""
         args = (id,)
         self.query(query, args)
         self.cnx.commit()
 
     def get_categories(self):
+        "Returns a list of unique categories that are in the transaction table."
 
         query = """SELECT DISTINCT category from transactions"""
         self.query(query)
         return [cat[0] for cat in self.cur]
     
-    def get_n_transactions(self, n, sort_field='trans_date', asc=False):
+    def get_n_transactions(self, n:int, sort_field='trans_date', asc=False):
+        "Returns a list of n transactions sorted by the sort_field."
         if asc:
              query = f'SELECT * from transactions order by {sort_field} limit {n}'
         else:

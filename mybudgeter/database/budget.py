@@ -5,10 +5,11 @@ import sqlite3
 from database.database import Database
 
 class Budget(Database):
-    def __init__(self, file_path, db=None) -> None:
+    def __init__(self, file_path=None, db=None) -> None:
         super().__init__(file_path, db)
 
     def __create_db(self, file_path):
+        "Create a new database and budget table to store budget information at the given file_path."
         db = os.path.join(file_path, "budgeting.db")
         query = """CREATE TABLE budget (
                             category text,
@@ -25,7 +26,12 @@ class Budget(Database):
             print(err)
             self.close()
 
-    def add_category(self, category, limit=0, date=None):
+    def add_category(self, category:str, limit=0, date=None):
+        """Add a new budget category to the budget table. 
+        If no limit is given it will default to zero. 
+        If no date is given the budget will be set for the current month and year.
+        The date should be given as a datetime object."""
+
         date = datetime.datetime.now() if date is None else date
         args = (category.lower(), date.month, date.year, limit)
         query = """INSERT INTO budget 
@@ -34,7 +40,8 @@ class Budget(Database):
         self.query(query, args)
         self.cnx.commit()
 
-    def add_from_lists(self, cat_list, limit_list=None, date_list=None):
+    def add_from_lists(self, cat_list:list, limit_list=None, date_list=None):
+        """Adds categories to the budget table from lists."""
         
         # check lists are same length and if not given, create default list
         if isinstance(limit_list, list):
@@ -53,20 +60,25 @@ class Budget(Database):
         for i in range(len(cat_list)):
             self.add_category(cat_list[i], limit_list[i], date_list[i])
     
-    def modify_category(self, category, value, month, year):
+    def modify_category(self, category:str, value:float, month:int, year:int):
+        "Modifies the category limit for an entry in the budget table."
 
         query = f"update budget set amount = ? WHERE category = ? AND month = ? and year = ?"
         args = (value, category, month, year)
         self.query(query, args)
         self.cnx.commit()
 
-    def delete_category(self, category, month, year):
+    def delete_category(self, category:str, month:int, year:int):
+        "Deletes a budget entry for the given category, month, year."
+
         query = f"delete from budget WHERE category = ? AND month = ? AND year = ?"
         args = (category, month, year)
         self.query(query, args)
         self.cnx.commit()
 
     def check_budget(self, month=None, year=None):
+        """Returns a list of budget categories for the given month and year."""
+
         month = month if month else datetime.datetime.now().month
         year = year if year else datetime.datetime.now().year
 
@@ -76,6 +88,7 @@ class Budget(Database):
         return [tup for tup in self.cur]
     
     def get_categories(self):
+        "Returns a list of unique categories that are in the budget table."
 
         query = """SELECT DISTINCT category from budget"""
         self.query(query)
