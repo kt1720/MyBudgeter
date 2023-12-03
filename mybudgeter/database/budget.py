@@ -6,7 +6,14 @@ from database.database import Database
 
 class Budget(Database):
     def __init__(self, file_path=None, db=None) -> None:
-        super().__init__(file_path, db)
+        """Initialize the database either by providing a file_path where a 
+        new database will be created or provide the path to an existing db."""
+        # set as current working directory if none provided
+        file_path = file_path if file_path else os.getcwd()
+        if db:
+            self.connect(db)
+        else:
+            self.__create_db(file_path)
 
     def __create_db(self, file_path):
         "Create a new database and budget table to store budget information at the given file_path."
@@ -20,6 +27,7 @@ class Budget(Database):
                             CHECK (month >= 1 AND month <= 12 AND year > 0)
                             );"""
         try:
+            self.connect(db)
             self.query(query)
             self.cnx.commit()
         except sqlite3.Error as err: 
