@@ -1,7 +1,8 @@
 import os
-from datetime import datetime
+import matplotlib.pyplot as plt
 from database.budget import Budget
 from database.transactions import Transactions
+from utilities.helper import calculation_query, spending_query, linechart_query
 
 class User(object):
     TRANSACTION_TYPE = "transactions"
@@ -28,59 +29,29 @@ class User(object):
             else:
                 self.transactions = Transactions(self.file_path)
     
-    def calculate(self, type=TRANSACTION_TYPE, operation="total", categories=None, months=None, years=None) -> float:
-        """Calculate the total or average spending or budget."""
+    def total(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
+        """Calculate the total spending or budget."""
         # Build the base query
-        if operation == "total":
-            base_query = f"SELECT SUM(amount) FROM {type}"
-        elif operation == "average":
-            base_query = f"SELECT AVG(amount) FROM {type}"
-        else:
-            raise ValueError("Invalid operation. Please use 'total' or 'average'.")
-
-        # Prepare conditions and values for WHERE clause
-        conditions = []
-        values = []
-
-        if categories:
-            if isinstance(categories, str):
-                categories = [categories]
-            placeholders = ', '.join('?' for _ in categories)
-            conditions.append(f"category IN ({placeholders})")
-            values.extend(categories)
-
-        if months:
-            if not isinstance(months, list):
-                months = [months]
-            if type == User.TRANSACTION_TYPE:
-                month_placeholders = ', '.join('?' for _ in months)
-                conditions.append(f"strftime('%m', trans_date) IN ({month_placeholders})")
-                values.extend(str(month) for month in months)
-            elif type == User.BUDGET_TYPE:
-                month_placeholders = ', '.join('?' for _ in months)
-                conditions.append(f"month IN ({month_placeholders})")
-                values.extend(months)
-
-        if years:
-            if not isinstance(years, list):
-                years = [years]
-            if type == User.TRANSACTION_TYPE:
-                year_placeholders = ', '.join('?' for _ in years)
-                conditions.append(f"strftime('%Y', trans_date) IN ({year_placeholders})")
-                values.extend(str(year) for year in years)
-            elif type == User.BUDGET_TYPE:
-                year_placeholders = ', '.join('?' for _ in years)
-                conditions.append(f"year IN ({year_placeholders})")
-                values.extend(years)
-
-        # Add WHERE clause if conditions are present
-        where_clause = " AND ".join(conditions)
+        base_query = f"SELECT SUM(amount) FROM {type}"
+        where_clause, values = calculation_query(type, categories, months, years)
         full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
 
         # Execute the query
         getattr(self, type).query(query=full_query, args=values)
-        result = getattr(self, type).cur.fetchone()[0]
-        return result
+        total = getattr(self, type).cur.fetchone()[0]
+        return total
+    
+    def average(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
+        """Calculate the average spending or budget."""
+        # Build the base query
+        base_query = f"SELECT AVG(amount) FROM {type}"
+        where_clause, values = calculation_query(type, categories, months, years)
+        full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
+
+        # Execute the query
+        getattr(self, type).query(query=full_query, args=values)
+        average = getattr(self, type).cur.fetchone()[0]
+        return average
 
     def remaining_budget(self, categories=None, month=None, year=None) -> float:
             """
@@ -89,8 +60,8 @@ class User(object):
             user can choose to calculate the remaining budget for a given category in a specific month and year.
             warn the user if the user is overbudget
             """
-            total_budget = self.calculate("budget", "total", categories, month, year)
-            total_transaction = self.calculate("transactions", "total", categories, month, year)
+            total_budget = self.total("budget", categories, month, year)
+            total_transaction = self.total("transactions", categories, month, year)
             if total_budget != None and total_transaction != None:
                 remaining_budget = total_budget - total_transaction
                 if remaining_budget < 0:
@@ -106,25 +77,16 @@ class User(object):
             - If calculate_category is True, find the highest spending category in general.
             - If calculate_category is False, find the highest spending month in the current year.
             """
-            if calculate_category:
-                self.transactions.query("SELECT category, SUM(amount) FROM transactions GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1")
-                result = self.transactions.cur.fetchone()
-                if result:
-                    highest_spending_category, highest_amount = result
-                    print(f"Highest spending category: {highest_spending_category}, Amount: ${highest_amount:.2f}")
-                    return highest_spending_category, highest_amount
-                else:
-                    return "No data found for highest spending category."
+            query, values = spending_query(calculate_category)
+            self.transactions.query(query, values)
+            result = self.transactions.cur.fetchone()
+
+            if result:
+                query_type, amount = result
+                # print(f"Highest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Highest spending month in the current year is {query_type}: ${amount:.2f}")
+                return query_type, amount
             else:
-                current_year = datetime.now().year
-                self.transactions.query("SELECT strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month ORDER BY SUM(amount) DESC LIMIT 1", (str(current_year),))
-                result = self.transactions.cur.fetchone()
-                if result:
-                    highest_spending_month, highest_amount = result
-                    print(f"Highest spending month in current year: {highest_spending_month}, Amount: ${highest_amount:.2f}")
-                    return highest_spending_month, highest_amount
-                else:
-                    return "No data found for highest spending month in the current year."
+                return "No data found."
 
     def lowest_spending(self, calculate_category=True):
         """
@@ -132,23 +94,81 @@ class User(object):
         - If calculate_category is True, find the lowest spending category in general.
         - If calculate_category is False, find the lowest spending month in the current year.
         """
-    
-        if calculate_category:
-            self.transactions.query("SELECT category, SUM(amount) FROM transactions GROUP BY category ORDER BY SUM(amount) LIMIT 1")
-            result = self.transactions.cur.fetchone()
-            if result:
-                lowest_spending_category, lowest_amount = result
-                print(f"Lowest spending category: {lowest_spending_category}, Amount: ${lowest_amount:.2f}")
-                return lowest_spending_category, lowest_amount
-            else:
-                return "No data found for highest spending category."
-        else:
-            current_year = datetime.now().year
-            self.transactions.query("SELECT strftime('%m', trans_date) as month, SUM(amount) FROM transactions WHERE strftime('%Y', trans_date) = ? GROUP BY month ORDER BY SUM(amount) LIMIT 1", (str(current_year),))
-            result = self.transactions.cur.fetchone()
+        query, values = spending_query(calculate_category, "ASC")
+        self.transactions.query(query, values)
+        result = self.transactions.cur.fetchone()
+
         if result:
-            lowest_spending_month, lowest_amount = result
-            print(f"Lowest spending month in current year: {lowest_spending_month}, Amount: ${lowest_amount:.2f}")
-            return lowest_spending_month, lowest_amount
+            query_type, amount = result
+            # print(f"Lowest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Lowest spending month in the current year is {query_type}: ${amount:.2f}")
+            return query_type, amount
         else:
-            return "No data found for highest spending month in the current year."
+            return "No data found."
+
+    def summary(self):
+        """
+        Print out an overview of the user's budget information in a dashboard format.
+        """
+        remaining_budget = self.remaining_budget()
+        highest_category, highest_cat_spending = self.highest_spending()
+        lowest_category, lowest_cat_spending = self.lowest_spending()
+        highest_month, highest_mo_spending = self.highest_spending(False)
+        lowest_month, lowest_mo_spending = self.lowest_spending(False)
+
+        # Print the dashboard
+        print("\n===== Budget Summary =====")
+        print(f"Remaining Budget: ${remaining_budget:.2f}\n")
+
+        print("Category Breakdown:")
+        print(f"Highest Spending Category: {highest_category.capitalize():<20}")
+        print(f"Spending: ${highest_cat_spending:.2f}")
+        print(f"Lowest Spending Category:{lowest_category.capitalize():<20}")
+        print(f"Spending: ${lowest_cat_spending:.2f}\n")
+
+        print("Monthly Breakdown:")
+        print(f"Highest Spending Month: {highest_month.capitalize()}")
+        print(f"Spending: ${highest_mo_spending:.2f}")
+        print(f"Lowest Spending Month: {lowest_month.capitalize()}")
+        print(f"Spending: ${lowest_mo_spending:.2f}\n")
+
+        if remaining_budget < 0:
+            print(f"Warning: Over budget by ${abs(remaining_budget):.2f}\n")
+        else:
+            print("You are within budget. Keep it up!\n")
+        
+    def pie_chart(self, type = TRANSACTION_TYPE):
+        """
+        Plot a pie chart displaying the budget or spending breakdown by categories.
+        """
+        query = f"SELECT category, SUM(amount) FROM {type} GROUP BY category"
+        getattr(self, type).query(query)
+        data = getattr(self, type).cur.fetchall()
+        categories = [category[0] for category in data]
+        amounts = [amount[1] for amount in data]
+
+        # Create a pie chart
+        plt.figure(figsize=(8, 8))
+        plt.pie(amounts, labels=categories, autopct='%1.1f%%', startangle=140)
+        plt.title(f"{type.capitalize()} breakdown by categories")
+        plt.axis('equal')
+        plt.show()
+
+    def line_chart(self, type = TRANSACTION_TYPE):
+        """
+        Plot a line graph displaying the budget or spending trend.
+        """
+        getattr(self, type).query(linechart_query(type))
+        data = getattr(self, type).cur.fetchall()
+        months = [month[0] for month in data]
+        amounts = [amount[1] for amount in data]
+
+        # Plot the trend
+        plt.figure(figsize=(10, 6))
+        plt.plot(months, amounts, marker='o', linestyle='-')
+        plt.title("Spending Trend Over the Last 12 Months" if type == "transactions" else f"{type.capitalize()} Trend Over the Last 12 Months")
+        plt.xlabel("Month")
+        plt.ylabel("Amount")
+        plt.grid(True)
+        plt.show()
+
+
