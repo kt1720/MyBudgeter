@@ -68,7 +68,7 @@ class User(object):
                     print(f"Warning: You are over budget by ${abs(remaining_budget)}.")
                 return remaining_budget
             else:
-                print("Error calculating remining budget.")
+                print("Error calculating remaining budget.")
                 return None
 
     def highest_spending(self, calculate_category=True):
