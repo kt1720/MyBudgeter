@@ -53,15 +53,15 @@ class User(object):
         average = getattr(self, type).cur.fetchone()[0]
         return average
 
-    def remaining_budget(self, categories=None, month=None, year=None) -> float:
+    def remaining_budget(self, categories=None, months=None, years=None) -> float:
             """
             Calculate if the user is over or under budget base on the total in budget and spending.
             Default calculation will be the difference between the subtotal in budget and spending.
             user can choose to calculate the remaining budget for a given category in a specific month and year.
             warn the user if the user is overbudget
             """
-            total_budget = self.total("budget", categories, month, year)
-            total_transaction = self.total("transactions", categories, month, year)
+            total_budget = self.total("budget", categories, months, years)
+            total_transaction = self.total("transactions", categories, months, years)
             if total_budget != None and total_transaction != None:
                 remaining_budget = total_budget - total_transaction
                 if remaining_budget < 0:
