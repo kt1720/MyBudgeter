@@ -3,7 +3,7 @@ python:
   - "3.8"
   - "3.9"
 install:
-  - pip install -r datetime unittest matplotlib
+  - pip install -r matplotlib
 script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
   - python mybudgeter/tests/test_suite.py
