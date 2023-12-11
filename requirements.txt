@@ -1,2 +1,2 @@
 matplotlib==3.7.4
-sqlite3>=3.35.0
+sqlite3==3.35.0
