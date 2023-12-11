@@ -2,7 +2,7 @@ import unittest
 import os
 import datetime
 
-from database.transactions import Transactions
+from mybudgeter.database.transactions import Transactions
 
 class TestTransactions(unittest.TestCase):
     @classmethod
