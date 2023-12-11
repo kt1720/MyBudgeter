@@ -7,3 +7,4 @@ install:
 script:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
   - python mybudgeter/tests/test_suite.py
+
