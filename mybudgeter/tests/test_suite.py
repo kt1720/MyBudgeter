@@ -1,7 +1,7 @@
 import unittest
-from budget_test import TestBudget
-from transactions_test import TestTransactions
-from user_helper_test import TestUsers
+from tests.budget_test import TestBudget
+from tests.transactions_test import TestTransactions
+from tests.user_helper_test import TestUsers
 
 def my_suite():
 	suite = unittest.TestSuite()
