@@ -1,0 +1,8 @@
+language: python
+python:
+  - "3.8"
+  - "3.9"
+# command to run tests
+script:
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)
+  - python mybudgeter/tests/test_suite.py

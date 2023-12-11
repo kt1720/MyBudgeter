@@ -2,7 +2,7 @@ import unittest
 import os
 import datetime
 
-from database.budget import Budget
+from mybudgeter.database.budget import Budget
 
 class TestBudget (unittest.TestCase):
     @classmethod

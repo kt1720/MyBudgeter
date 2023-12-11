@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 import unittest
-from utilities import users, helper
+from mybudgeter.utilities import users, helper
 
 class TestUsers(unittest.TestCase):
     @classmethod
