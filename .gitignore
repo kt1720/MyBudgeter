@@ -118,5 +118,3 @@ ui-tests/playwright-report
 .pnp.*
 ui-tests/.yarn/*
 ui-tests/.pnp.*
-# Ignore the requirements.txt file
-requirements.txt
