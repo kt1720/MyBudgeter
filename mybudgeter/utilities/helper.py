@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
-def calculation_query(type, categories, months, years):
-    # Prepare conditions and values for WHERE clause
+def calculation_query(type, categories=None, months=None, years=None):
+    """Prepare conditions and values for the WHERE clause used in total and average in the User class"""
     conditions = []
     values = []
 
@@ -59,6 +59,7 @@ def spending_query(calculate_category=True, order_by="DESC"):
     return query, values
 
 def linechart_query(type):
+    """Build query for the linechart function in the User class"""
     # Get the current date
     end_date = datetime.now()
     # Calculate the start date (12 months ago)
@@ -67,19 +68,7 @@ def linechart_query(type):
     start_date_str = start_date.strftime('%Y-%m-%d')
     end_date_str = end_date.strftime('%Y-%m-%d')
     if type == "transactions":
-        query = f"""
-            SELECT strftime('%Y-%m', trans_date) AS month, SUM(amount)
-            FROM {type}
-            WHERE trans_date BETWEEN '{start_date_str}' AND '{end_date_str}'
-            GROUP BY strftime('%Y-%m', trans_date)
-            ORDER BY month
-            """
+        query = f"SELECT strftime('%Y-%m', trans_date) AS month, SUM(amount) FROM {type} WHERE trans_date BETWEEN '{start_date_str}' AND '{end_date_str}' GROUP BY strftime('%Y-%m', trans_date) ORDER BY month"
     else:
-        query = f"""
-            SELECT printf('%d-%02d', year, month) AS month, SUM(amount)
-            FROM {type}
-            WHERE printf('%d-%02d', year, month) BETWEEN '{start_date_str}' AND '{end_date_str}'
-            GROUP BY year, month
-            ORDER BY month
-            """
+        query = f"SELECT printf('%d-%02d', year, month) AS month, SUM(amount) FROM {type} WHERE printf('%d-%02d', year, month) BETWEEN '{start_date_str}' AND '{end_date_str}' GROUP BY year, month ORDER BY month"
     return query
