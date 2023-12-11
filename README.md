@@ -1,3 +1,5 @@
+[![Build Status](https://app.travis-ci.com/kt1720/Data-533-Group-16-project.svg?branch=main)](https://app.travis-ci.com/kt1720/Data-533-Group-16-project)
+
 # Data-533-Group-16-project
 ## Description
 Our plan is to create a household budgeting tool called `mybudgeter`. 
