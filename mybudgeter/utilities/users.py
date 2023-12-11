@@ -1,8 +1,8 @@
 import os
 import matplotlib.pyplot as plt
-from database.budget import Budget
-from database.transactions import Transactions
-from utilities.helper import calculation_query, spending_query, linechart_query
+from mybudgeter.database.budget import Budget
+from mybudgeter.database.transactions import Transactions
+from mybudgeter.utilities.helper import calculation_query, spending_query, linechart_query
 
 class User(object):
     TRANSACTION_TYPE = "transactions"

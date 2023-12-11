@@ -2,7 +2,7 @@ import os
 import datetime
 import sqlite3
 
-from database.database import Database
+from mybudgeter.database.database import Database
 
 class Budget(Database):
     def __init__(self, file_path=None, db=None) -> None:
