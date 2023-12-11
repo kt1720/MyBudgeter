@@ -1,4 +1,4 @@
-[![Unit test run](https://github.com/kt1720/Data-533-Group-16-project/blob/main/.github/workflows/python-package.yml/badge.svg)]
+[![Unit test run](https://github.com/kt1720/Data-533-Group-16-project/actions/workflows/python-package.yml/badge.svg)]
 
 # Data-533-Group-16-project
 ## Description
