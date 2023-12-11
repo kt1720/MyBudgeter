@@ -1,0 +1,9 @@
+language: python
+python:
+  - "3.10"
+  - "3.12"
+install:
+  - pip install -r datetime unittest matplotlib
+script:
+  - export PYTHONPATH=$PYTHONPATH:$(pwd)
+  - python mybudgeter/tests/test_suite.py
