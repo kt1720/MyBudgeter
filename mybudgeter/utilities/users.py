@@ -4,6 +4,11 @@ from mybudgeter.database.budget import Budget
 from mybudgeter.database.transactions import Transactions
 from mybudgeter.utilities.helper import calculation_query, spending_query, linechart_query
 
+# Create a user-defined exception to handle SQlite query that returns nothing
+class SQliteError(Exception):
+    def __init__(self, message) -> None:
+        self.message = message
+
 class User(object):
     TRANSACTION_TYPE = "transactions"
     BUDGET_TYPE = "budget"
@@ -32,26 +37,44 @@ class User(object):
     def total(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
         """Calculate the total spending or budget."""
         # Build the base query
-        base_query = f"SELECT SUM(amount) FROM {type}"
-        where_clause, values = calculation_query(type, categories, months, years)
-        full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
+        try:
+            base_query = f"SELECT SUM(amount) FROM {type}"
+            where_clause, values = calculation_query(type, categories, months, years)
+            full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
 
-        # Execute the query
-        getattr(self, type).query(query=full_query, args=values)
-        total = getattr(self, type).cur.fetchone()[0]
-        return total
+            # Execute the query
+            getattr(self, type).query(query=full_query, args=values)
+            total = getattr(self, type).cur.fetchone()[0]
+            if not total:
+                raise SQliteError("The SQlite query did not return anything, please check if you have entered the correct input parameter.")
+            return total
+        except (AttributeError, TypeError, SQliteError) as e:
+            print(f"Error in querying the total: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error in querying the total: {e}")
+            raise 
     
     def average(self, type=TRANSACTION_TYPE, categories=None, months=None, years=None) -> float:
         """Calculate the average spending or budget."""
         # Build the base query
-        base_query = f"SELECT AVG(amount) FROM {type}"
-        where_clause, values = calculation_query(type, categories, months, years)
-        full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
+        try:
+            base_query = f"SELECT AVG(amount) FROM {type}"
+            where_clause, values = calculation_query(type, categories, months, years)
+            full_query = f"{base_query}{' WHERE ' + where_clause if where_clause else ''}"
 
-        # Execute the query
-        getattr(self, type).query(query=full_query, args=values)
-        average = getattr(self, type).cur.fetchone()[0]
-        return average
+            # Execute the query
+            getattr(self, type).query(query=full_query, args=values)
+            average = getattr(self, type).cur.fetchone()[0]
+            if not average:
+                raise SQliteError("The SQlite query did not return anything, please check if you have entered the correct input parameter.")
+            return average
+        except (AttributeError, TypeError, SQliteError) as e:
+            print(f"Error in querying the average: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error in querying the average: {e}")
+            raise 
 
     def remaining_budget(self, categories=None, months=None, years=None) -> float:
             """
@@ -60,16 +83,21 @@ class User(object):
             user can choose to calculate the remaining budget for a given category in a specific month and year.
             warn the user if the user is overbudget
             """
-            total_budget = self.total("budget", categories, months, years)
-            total_transaction = self.total("transactions", categories, months, years)
-            if total_budget != None and total_transaction != None:
-                remaining_budget = total_budget - total_transaction
-                if remaining_budget < 0:
-                    print(f"Warning: You are over budget by ${abs(remaining_budget)}.")
-                return remaining_budget
-            else:
-                print("Error calculating remaining budget.")
-                return None
+            try:
+                total_budget = self.total("budget", categories, months, years)
+                total_transaction = self.total("transactions", categories, months, years)
+                if total_budget != None and total_transaction != None:
+                    remaining_budget = total_budget - total_transaction
+                    if remaining_budget < 0:
+                        print(f"Warning: You are over budget by ${abs(remaining_budget)}.")
+                    return remaining_budget
+                else:
+                    raise SQliteError("The SQlite query did not return anything, please check if you have entered the correct input parameter.")
+            except (AttributeError, TypeError, SQliteError) as e:
+                print(f"Error in querying the remaining budget: {e}")
+            except Exception as e:
+                print(f"Unexpected error in querying the remaining budget: {e}")
+                raise 
 
     def highest_spending(self, calculate_category=True):
             """
@@ -77,16 +105,22 @@ class User(object):
             - If calculate_category is True, find the highest spending category in general.
             - If calculate_category is False, find the highest spending month in the current year.
             """
-            query, values = spending_query(calculate_category)
-            self.transactions.query(query, values)
-            result = self.transactions.cur.fetchone()
-
-            if result:
-                query_type, amount = result
-                # print(f"Highest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Highest spending month in the current year is {query_type}: ${amount:.2f}")
-                return query_type, amount
-            else:
-                return "No data found."
+            try:
+                query, values = spending_query(calculate_category)
+                self.transactions.query(query, values)
+                result = self.transactions.cur.fetchone()
+                if result:
+                    query_type, amount = result
+                    # print(f"Highest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Highest spending month in the current year is {query_type}: ${amount:.2f}")
+                    return query_type, amount
+                else:
+                    raise SQliteError("There are no data found in the transactions database.")              
+            except SQliteError as e:
+                print(f"Error in querying the highest spending: {e}")
+                return None
+            except Exception as e:
+                print(f"Unexpected error in querying the highest spending: {e}")
+                raise
 
     def lowest_spending(self, calculate_category=True):
         """
@@ -94,16 +128,22 @@ class User(object):
         - If calculate_category is True, find the lowest spending category in general.
         - If calculate_category is False, find the lowest spending month in the current year.
         """
-        query, values = spending_query(calculate_category, "ASC")
-        self.transactions.query(query, values)
-        result = self.transactions.cur.fetchone()
-
-        if result:
-            query_type, amount = result
-            # print(f"Lowest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Lowest spending month in the current year is {query_type}: ${amount:.2f}")
-            return query_type, amount
-        else:
-            return "No data found."
+        try:
+            query, values = spending_query(calculate_category, "ASC")
+            self.transactions.query(query, values)
+            result = self.transactions.cur.fetchone()
+            if result:
+                query_type, amount = result
+                # print(f"Lowest spending category is {query_type}: ${amount:.2f}") if calculate_category else print(f"Lowest spending month in the current year is {query_type}: ${amount:.2f}")
+                return query_type, amount
+            else:
+                raise SQliteError("There are no data found in the tranasactions database.")          
+        except SQliteError as e:
+            print(f"Error in querying the lowest spending: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error in querying the lowest spending: {e}")
+            raise
 
     def summary(self):
         """
