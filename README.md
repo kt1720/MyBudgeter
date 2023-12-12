@@ -69,8 +69,8 @@ user.line_chart(type)
 
 ## Authors
 
-Kyle Deng
-Jacob Rosen
+* Kyle Deng
+* Jacob Rosen
 
 ## Version History
 
