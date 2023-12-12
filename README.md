@@ -1,4 +1,4 @@
-![Unit test run](https://github.com/kt1720/Data-533-Group-16-project/actions/workflows/python-package.yml/badge.svg)
+![Unit test run](https://github.com/kt1720/Data-533-Group-16-project/actions/workflows/python-package.yml/badge.svg)[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # MyBudgeter Python Package (Data-533-Group-16-project)
 
