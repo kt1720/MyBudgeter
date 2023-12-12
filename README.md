@@ -8,6 +8,8 @@ A Python package to create simple household budgets.
 
 `mybudgeter` is a Python package that allows users to set and check budgets for a number of spending categories they choose. Users will be able to add, modify, and delete individual transactions, categorize their spending and set a budget for each category. If a user's spending is over their set budget, the program will alarm the user. The program will allow users to create a brand new SQLite database to store their spending and budget data if it's the first time using the program or import the data from a SQLite database if it's previously created. Users will also have the option to perform basic budget calculations, read or visualize simple budget summary, and visualize spending vs. budget trends.
 
+[Link to PyPI Project](https://pypi.org/project/mybudgeter/)
+
 ## Getting Started
 
 ### Installing
