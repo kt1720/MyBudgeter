@@ -17,8 +17,8 @@ def calculation_query(type, categories=None, months=None, years=None):
             months = [months]
         if type == "transactions":
             month_placeholders = ', '.join('?' for _ in months)
-            conditions.append(f"strftime('%m', trans_date) IN ({month_placeholders})")
-            values.extend(str(month) for month in months)
+            conditions.append(f"CAST(strftime('%m', trans_date) AS INTEGER) IN ({month_placeholders})")
+            values.extend(months)
         elif type == "budget":
             month_placeholders = ', '.join('?' for _ in months)
             conditions.append(f"month IN ({month_placeholders})")
