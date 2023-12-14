@@ -67,7 +67,7 @@ class TestUsers(unittest.TestCase):
 
     def test_calculation_query(self) -> None:
         self.assertEqual(helper.calculation_query(type="transactions", categories=["food", "clothing"]), ("category IN (?, ?)", ["food", "clothing"]))
-        self.assertEqual(helper.calculation_query(type="transactions", categories=["food", "clothing"], months=11, years=2023), ("category IN (?, ?) AND strftime('%m', trans_date) IN (?) AND strftime('%Y', trans_date) IN (?)", ["food", "clothing", '11', '2023']))
+        self.assertEqual(helper.calculation_query(type="transactions", categories=["food", "clothing"], months=11, years=2023), ("category IN (?, ?) AND CAST(strftime('%m', trans_date) AS INTEGER) IN (?) AND strftime('%Y', trans_date) IN (?)", ["food", "clothing", 11, '2023']))
         self.assertEqual(helper.calculation_query(type="budget", months=12, years=2023), ("month IN (?) AND year IN (?)", [12, 2023]))
         self.assertEqual(helper.calculation_query(type="budget", categories=["food", "clothing"], months=11, years=2023), ("category IN (?, ?) AND month IN (?) AND year IN (?)", ["food", "clothing", 11, 2023]))
 
