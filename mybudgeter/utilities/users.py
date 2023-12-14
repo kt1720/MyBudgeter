@@ -162,7 +162,7 @@ class User(object):
         print("Category Breakdown:")
         print(f"Highest Spending Category: {highest_category.capitalize():<20}")
         print(f"Spending: ${highest_cat_spending:.2f}")
-        print(f"Lowest Spending Category:{lowest_category.capitalize():<20}")
+        print(f"Lowest Spending Category: {lowest_category.capitalize():<20}")
         print(f"Spending: ${lowest_cat_spending:.2f}\n")
 
         print("Monthly Breakdown:")
